@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import { api } from './lib/api'
+
+api.get('/').then(res => {
+  console.log('Backend health:', res.data)
+}).catch(err => {
+  console.error('Backend not reachable:', err?.message || err)
+})
 import HelloWorld from './components/HelloWorld.vue'
 import TheWelcome from './components/TheWelcome.vue'
 </script>
