@@ -18,3 +18,4 @@ router.get('/', async () => {
 
 router.get('/transactions', [TransactionsController, 'index'])
 router.post('/transactions', [TransactionsController, 'store'])
+router.get('/balances', [TransactionsController, 'balances'])

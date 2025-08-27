@@ -2,6 +2,7 @@ import { DateTime } from 'luxon'
 import type { HttpContext } from '@adonisjs/core/http'
 import Transaction from '#models/transaction'
 import vine from '@vinejs/vine'
+import db from '@adonisjs/lucid/services/db'
 
 const createTransactionSchema = vine.compile(
     vine.object({
@@ -30,7 +31,7 @@ export default class TransactionsController {
         if (endDate) query.where('date', '<=', endDate)
         return await query
     }
-    
+
     public async store({ request, response }: HttpContext) {
         const payload = await request.validateUsing(createTransactionSchema)
 
@@ -43,5 +44,20 @@ export default class TransactionsController {
         })
 
         return response.created(tx)
+    }
+
+    public async balances() {
+        const rows = await db.from('transactions')
+            .select('category')
+            .sum({ total: 'amount' })
+            .groupBy('category')
+
+        // normalize to { [category]: number }
+        const result: Record<string, number> = {}
+        rows.forEach((r: any) => {
+            result[r.category] = parseFloat(r.total) || 0
+        })
+
+        return result
     }
 }
