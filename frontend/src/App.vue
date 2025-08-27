@@ -1,26 +1,43 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { api } from './lib/api'
 import type { Transaction } from './types/transactions'
 
+/** --- Add Transaction form state --- */
 const form = ref<Transaction>({
   amount: 0,
   currency: 'USD',
-  date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
+  date: new Date().toISOString().slice(0, 10),
   description: '',
   category: 'General',
 })
-
 const loading = ref(false)
 const message = ref<string | null>(null)
 const error = ref<string | null>(null)
+
+/** --- Transactions list state --- */
+const transactions = ref<Transaction[]>([])
+const listLoading = ref(false)
+const listError = ref<string | null>(null)
+
+async function fetchTransactions() {
+  listError.value = null
+  listLoading.value = true
+  try {
+    const { data } = await api.get<Transaction[]>('/transactions')
+    transactions.value = data
+  } catch (e: any) {
+    listError.value = e?.response?.data?.message || 'Failed to load transactions'
+  } finally {
+    listLoading.value = false
+  }
+}
 
 async function submit() {
   message.value = null
   error.value = null
   loading.value = true
   try {
-    // backend expects amount number, currency 3 letters, date 'YYYY-MM-DD'
     await api.post('/transactions', {
       amount: Number(form.value.amount),
       currency: String(form.value.currency).toUpperCase(),
@@ -28,23 +45,29 @@ async function submit() {
       description: form.value.description ?? '',
       category: form.value.category,
     })
-
     message.value = 'Transaction added!'
     // reset a few fields
     form.value.amount = 0
     form.value.description = ''
+    // refresh list
+    await fetchTransactions()
   } catch (e: any) {
     error.value = e?.response?.data?.message || 'Failed to add transaction'
   } finally {
     loading.value = false
   }
 }
+
+onMounted(() => {
+  fetchTransactions()
+})
 </script>
 
 <template>
-  <main class="p-6 max-w-3xl mx-auto">
-    <h1 class="text-2xl font-semibold mb-4">Mini Expense Tracker</h1>
+  <main class="p-6 max-w-5xl mx-auto space-y-6">
+    <h1 class="text-2xl font-semibold">Mini Expense Tracker</h1>
 
+    <!-- Add Transaction -->
     <section class="border rounded-xl p-4 space-y-3">
       <h2 class="font-medium">Add Transaction</h2>
 
@@ -75,15 +98,50 @@ async function submit() {
           <input v-model="form.description" class="w-full border rounded p-2" />
         </div>
 
-        <div class="sm:col-span-2">
+        <div class="sm:col-span-2 flex items-center gap-3">
           <button class="border rounded px-4 py-2" :disabled="loading" type="submit">
             {{ loading ? 'Saving…' : 'Add Transaction' }}
           </button>
+          <span v-if="message" class="text-green-600 text-sm">{{ message }}</span>
+          <span v-if="error" class="text-red-600 text-sm">{{ error }}</span>
         </div>
       </form>
+    </section>
 
-      <p v-if="message" class="text-green-600 text-sm">{{ message }}</p>
-      <p v-if="error" class="text-red-600 text-sm">{{ error }}</p>
+    <!-- Transactions List -->
+    <section class="border rounded-xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-medium">Transactions</h2>
+        <button class="border rounded px-3 py-1 text-sm" @click="fetchTransactions" :disabled="listLoading">
+          {{ listLoading ? 'Refreshing…' : 'Refresh' }}
+        </button>
+      </div>
+
+      <div v-if="listError" class="text-red-600 text-sm mb-2">{{ listError }}</div>
+
+      <table class="w-full border-collapse">
+        <thead>
+          <tr class="text-left border-b">
+            <th class="py-2">Date</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Currency</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="t in transactions" :key="t.id" class="border-b">
+            <td class="py-2">{{ t.date }}</td>
+            <td>{{ t.description }}</td>
+            <td>{{ t.category }}</td>
+            <td>{{ Number(t.amount).toFixed(2) }}</td>
+            <td>{{ t.currency }}</td>
+          </tr>
+          <tr v-if="!listLoading && transactions.length === 0">
+            <td class="py-4 text-center text-sm text-gray-500" colspan="5">No transactions yet</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
   </main>
 </template>
