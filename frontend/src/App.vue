@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from './lib/api'
-import type { Transaction } from './types/transactions'
+import type { Transaction, Balances } from './types/transactions'
 
 /** --- Add Transaction form state --- */
 const form = ref<Transaction>({
@@ -20,6 +20,11 @@ const transactions = ref<Transaction[]>([])
 const listLoading = ref(false)
 const listError = ref<string | null>(null)
 
+/** --- Balances (summary) state --- */
+const balances = ref<Balances>({})
+const balancesLoading = ref(false)
+const balancesError = ref<string | null>(null)
+
 async function fetchTransactions() {
   listError.value = null
   listLoading.value = true
@@ -30,6 +35,19 @@ async function fetchTransactions() {
     listError.value = e?.response?.data?.message || 'Failed to load transactions'
   } finally {
     listLoading.value = false
+  }
+}
+
+async function fetchBalances() {
+  balancesError.value = null
+  balancesLoading.value = true
+  try {
+    const { data } = await api.get<Balances>('/balances')
+    balances.value = data
+  } catch (e: any) {
+    balancesError.value = e?.response?.data?.message || 'Failed to load balances'
+  } finally {
+    balancesLoading.value = false
   }
 }
 
@@ -46,11 +64,10 @@ async function submit() {
       category: form.value.category,
     })
     message.value = 'Transaction added!'
-    // reset a few fields
     form.value.amount = 0
     form.value.description = ''
-    // refresh list
     await fetchTransactions()
+    await fetchBalances()
   } catch (e: any) {
     error.value = e?.response?.data?.message || 'Failed to add transaction'
   } finally {
@@ -60,12 +77,35 @@ async function submit() {
 
 onMounted(() => {
   fetchTransactions()
+  fetchBalances()
 })
 </script>
 
 <template>
   <main class="p-6 max-w-5xl mx-auto space-y-6">
     <h1 class="text-2xl font-semibold">Mini Expense Tracker</h1>
+
+    <!-- Summary -->
+    <section class="border rounded-xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-medium">Summary (by category)</h2>
+        <button class="border rounded px-3 py-1 text-sm" @click="fetchBalances" :disabled="balancesLoading">
+          {{ balancesLoading ? 'Refreshing…' : 'Refresh' }}
+        </button>
+      </div>
+
+      <div v-if="balancesError" class="text-red-600 text-sm mb-2">{{ balancesError }}</div>
+
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div v-for="(total, cat) in balances" :key="cat" class="border rounded-lg p-3">
+          <div class="text-sm text-gray-600">{{ cat }}</div>
+          <div class="text-xl font-semibold">{{ total.toFixed(2) }}</div>
+        </div>
+        <div v-if="!balancesLoading && Object.keys(balances).length === 0" class="text-sm text-gray-500">
+          No data yet
+        </div>
+      </div>
+    </section>
 
     <!-- Add Transaction -->
     <section class="border rounded-xl p-4 space-y-3">
@@ -145,7 +185,6 @@ onMounted(() => {
     </section>
   </main>
 </template>
-
 
 <style scoped>
 header {
