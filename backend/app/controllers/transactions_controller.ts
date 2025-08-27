@@ -14,17 +14,23 @@ const createTransactionSchema = vine.compile(
 )
 
 export default class TransactionsController {
-    public async index({ request }: HttpContext) {
-        // optional filters: startDate, endDate (YYYY-MM-DD)
+    public async index({ request, response }: HttpContext) {
         const { startDate, endDate } = request.qs()
 
-        const query = Transaction.query().orderBy('date', 'desc').orderBy('id', 'desc')
+        // Validate optional YYYY-MM-DD strings
+        if (startDate && !DateTime.fromISO(startDate, { zone: 'utc' }).isValid) {
+            return response.badRequest({ message: 'Invalid startDate. Expected YYYY-MM-DD.' })
+        }
+        if (endDate && !DateTime.fromISO(endDate, { zone: 'utc' }).isValid) {
+            return response.badRequest({ message: 'Invalid endDate. Expected YYYY-MM-DD.' })
+        }
 
+        const query = Transaction.query().orderBy('date', 'desc').orderBy('id', 'desc')
         if (startDate) query.where('date', '>=', startDate)
         if (endDate) query.where('date', '<=', endDate)
-
         return await query
     }
+    
     public async store({ request, response }: HttpContext) {
         const payload = await request.validateUsing(createTransactionSchema)
 
