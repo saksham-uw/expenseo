@@ -1,39 +1,41 @@
-# .
+# Expenseo Frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+This is the frontend for **Expenseo**, built with Vue 3, Vite, and TypeScript.  
 
-## Recommended IDE Setup
+---
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## 🚀 Running (via Docker)
 
-## Type Support for `.vue` Imports in TS
+From project root:
+```bash
+docker-compose up --build
+````
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+The frontend will be available at:
+👉 [http://localhost:5173](http://localhost:5173)
 
-## Customize configuration
+---
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+## 🔌 API Integration
 
-## Project Setup
+* Uses Axios client defined in `src/lib/api.ts`
+* API base URL is set via `VITE_API_URL` in `.env`
+* Expects backend to be running at [http://localhost:3333](http://localhost:3333)
 
-```sh
-npm install
-```
+---
 
-### Compile and Hot-Reload for Development
+## 📋 Features
 
-```sh
-npm run dev
-```
+* **Add Transaction form** → POST `/transactions`
+* **Transactions table** → GET `/transactions`
+* **Summary view** → GET `/balances`
 
-### Type-Check, Compile and Minify for Production
+---
 
-```sh
-npm run build
-```
+## 🛠️ Development Notes
 
-### Lint with [ESLint](https://eslint.org/)
+* Hot-reload supported via Vite
+* Type definitions in `src/types.ts`
+* Styling: basic CSS for MVP (later polished with shadcn-vue)
 
-```sh
-npm run lint
-```
+---
