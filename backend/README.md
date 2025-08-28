@@ -1,57 +1,67 @@
 # Expenseo Backend
 
-This is the backend API for Expenseo, an expense tracking application. It is built with AdonisJS (v6) and uses a PostgreSQL database.
+AdonisJS v6 (TypeScript) + PostgreSQL.
 
-## Getting Started
+## ▶️ Run (via Docker)
 
-The backend is designed to be run with Docker. From the root of the project, run:
-
+From the project root:
 ```bash
 docker-compose up --build
+````
+
+API will be available at **[http://localhost:3333](http://localhost:3333)**.
+Postgres runs with:
+
+* User: `postgres`
+* Password: `postgres`
+* Database: `expenses`
+
+On first run, migrations are automatically applied.
+
+---
+
+## 🔗 API Endpoints
+
+* `POST /transactions` – create a transaction
+* `GET /transactions` – list transactions (optional `startDate`, `endDate`)
+* `GET /balances` – totals grouped by `category`
+
+---
+
+## 🧪 Tests & Data Safety
+
+The basic aggregation test truncates the `transactions` table for clean state:
+
+```ts
+await db.rawQuery('TRUNCATE TABLE transactions RESTART IDENTITY CASCADE')
 ```
 
-The API will be available at `http://localhost:3333`.
+**Important:** only run this against a **test** database.
 
-### Database
+### Recommended environment split
 
-- The service uses a PostgreSQL 16 database.
-- Default credentials (user/password): `postgres` / `postgres`
-- Database name: `expenses`
-- On the first run, migrations will be automatically applied to set up the necessary tables.
+* `.env` → development (e.g., `expenses_dev`)
+* `.env.test` → test (e.g., `expenses_test`)
+* `.env.production` → production (e.g., `expenses_prod`)
 
-## API Endpoints
-
-- `POST /transactions`
-    - Creates a new transaction.
-    - **Body**:
-        ```json
-        {
-          "amount": 12.34,
-          "currency": "USD",
-          "date": "2025-08-27",
-          "description": "coffee",
-          "category": "Food"
-        }
-        ```
-    - **Returns**: `201 Created` with the created transaction object.
-
-- `GET /transactions`
-    - Retrieves a list of all transactions, sorted by most recent first.
-    - **Optional Query Parameters**:
-        - `startDate` (YYYY-MM-DD)
-        - `endDate` (YYYY-MM-DD)
-
-- `GET /balances`
-    - Returns an object with the sum of expenses for each category.
-    - **Example Response**:
-        ```json
-        { "Food": 12.34, "Transport": 20.5 }
-        ```
-
-## Running Tests
-
-To run the test suite, you can execute the test command inside the running `backend` container:
+**Example (Docker) run for tests with a test DB:**
 
 ```bash
-docker-compose exec backend npm test
+docker-compose exec -e NODE_ENV=test -e DB_DATABASE=expenses_test backend \\
+  sh -lc "node ace migration:run --force && npm test"
 ```
+
+**Guardrail (suggested):** add a check in your test setup to refuse truncation unless `NODE_ENV === 'test'`.
+
+**Note for reviewers:**
+For this take-home, truncation keeps tests deterministic without extra tooling. In a production setting, I would isolate test data via a dedicated test DB and CI service, load `.env.test`, and enforce environment guards for destructive operations.
+
+---
+
+## 🧰 Dev Notes
+
+* `date` stored as **date-only** in DB
+* `amount` stored as `numeric(14,2)` in Postgres
+* VineJS validation on `POST /transactions`
+* `/balances` uses SQL aggregation (`SUM` + `GROUP BY`)
+* Docker dev flow: `npm ci` + migrations on container start

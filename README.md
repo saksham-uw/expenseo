@@ -2,8 +2,8 @@
 
 Expenseo is a simple full-stack expense tracking application built with:
 
-- **Backend:** AdonisJS (TypeScript) + PostgreSQL
-- **Frontend:** Vue 3 + Vite (TypeScript)
+- **Backend:** AdonisJS (TypeScript) + PostgreSQL  
+- **Frontend:** Vue 3 + Vite (TypeScript)  
 - **Infra:** Docker Compose for one-command setup
 
 ---
@@ -18,9 +18,7 @@ docker-compose up --build
 * Frontend: [http://localhost:5173](http://localhost:5173)
 * Backend API: [http://localhost:3333](http://localhost:3333)
 * Database: PostgreSQL 16
-  ‣ User: `postgres`
-  ‣ Password: `postgres`
-  ‣ DB: `expenses`
+  ‣ User: `postgres` · Password: `postgres` · DB: `expenses`
 
 > On first run, migrations are automatically applied by the backend.
 
@@ -85,28 +83,54 @@ Configuration:
 
 ---
 
-## 🛠️ Dev Notes & Design Decisions
+## 🛠️ Design Notes
 
 * **Date-only** for transactions (`date` column), no time-of-day stored.
 * **Amounts** stored as `numeric(14,2)` in Postgres; exposed as string, normalized in UI with `Number(...).toFixed(2)`.
 * **Validation** done with VineJS on create.
-* **Layering:**
+* **Aggregation** uses SQL `SUM(...) GROUP BY category`.
+* **Docker QoL:** frontend & backend run `npm ci` on container start; backend also auto-runs migrations.
 
-  * Controllers handle validation + persistence
-  * Aggregation (`/balances`) uses SQL `SUM(...) GROUP BY category`
-* **Docker Dev Quality-of-Life:**
+---
 
-  * Frontend & backend run `npm ci` on container start (avoids missing node\_modules with bind mounts).
-  * Backend auto-runs migrations on start.
+## 🧪 Testing & Data Safety
+
+The basic backend test **truncates** the `transactions` table to ensure isolation:
+
+* This is safe for a **test database** only.
+* Do **not** run tests against dev/prod data.
+
+**Recommendation for real projects:**
+
+* Use **separate databases** per environment:
+
+  * `expenses_prod`, `expenses_dev`, `expenses_test`
+* Provide dedicated env files:
+
+  * `.env` (development), `.env.test` (test), `.env.production` (production)
+* Run tests with `NODE_ENV=test` and point to `expenses_test`.
+  Example (Docker):
+
+  ```bash
+  docker-compose exec -e NODE_ENV=test -e DB_DATABASE=expenses_test backend \\
+    sh -lc "node ace migration:run --force && npm test"
+  ```
+* Add a small guard in tests to refuse `TRUNCATE` when `NODE_ENV !== 'test'`.
+
+**Note for reviewers (interview context):**
+For this assignment, the test intentionally truncates the table to keep the setup simple and deterministic. In a production-grade setup, I would:
+
+1. Use a **separate test DB** loaded via `.env.test`.
+2. **Auto-run migrations** for the test DB before the suite.
+3. Add a **guard** to prevent destructive ops outside `NODE_ENV=test`.
+4. In CI, spin up an isolated Postgres service and point tests to it.
 
 ---
 
 ## 🧪 Running Tests
 
-Basic backend test suite is included:
-
 ```bash
-# run inside backend container
+# run inside backend container (uses current env DB settings)
 docker-compose exec backend npm test
 ```
 
@@ -121,5 +145,3 @@ Commits are incremental and grouped by feature:
 * Infrastructure tweaks
 * Tests
 * Documentation
-
----
