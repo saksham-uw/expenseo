@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -76,6 +76,17 @@
   --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
   --sidebar-border: oklch(0.923 0.003 48.717);
   --sidebar-ring: oklch(0.709 0.01 56.259);
+
+  --vis-tooltip-background-color: none !important;
+  --vis-tooltip-border-color: none !important;
+  --vis-tooltip-text-color: none !important;
+  --vis-tooltip-shadow-color: none !important;
+  --vis-tooltip-backdrop-filter: none !important;
+  --vis-tooltip-padding: none !important;
+
+  --vis-primary-color: var(--primary);
+  --vis-secondary-color: var(--secondary);
+  --vis-text-color: var(--muted-foreground);
 }
 
 .dark {
