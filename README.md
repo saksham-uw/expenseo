@@ -154,6 +154,14 @@ COUNT=60 BACKEND_URL=http://localhost:3333 ./scripts/seed_transactions.sh
 
 ---
 
+## Bonus
+
+- [ ] Authentication (API key or JWT)
+- [x] Filtering transactions by date range on the frontend
+- [x] A GitHub Action to run tests on push
+
+---
+
 ## 📂 Repo Hygiene
 
 Commits are incremental and grouped by feature:

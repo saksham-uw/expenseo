@@ -50,6 +50,4 @@ for ((i=1; i<=COUNT; i++)); do
     }
 done
 
-echo "Done. Try:"
-echo "  curl -s $BACKEND_URL/balances | jq ."
-echo "  curl -s '$BACKEND_URL/balances/over-time?groupBy=month' | jq ."
+echo "Done."
