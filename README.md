@@ -1,4 +1,4 @@
-# Expenseo – Mini Expense Tracker
+# 📒 Expenseo – Lightweight Expense Tracker
 
 Expenseo is a simple full-stack expense tracking application built with:
 

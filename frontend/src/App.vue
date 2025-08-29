@@ -59,7 +59,6 @@ async function fetchTransactions() {
 }
 
 async function fetchBalances() {
-  // Note: /balances does NOT take date range in this version (kept simple)
   balancesError.value = null
   balancesLoading.value = true
   try {
@@ -114,7 +113,10 @@ onMounted(() => {
 
 <template>
   <main class="p-6 max-w-6xl mx-auto space-y-6">
-    <h1 class="text-3xl font-semibold tracking-tight">Mini Expense Tracker</h1>
+    <h1 class="text-3xl font-semibold tracking-tight">📒 Expenseo - Lightweight Expense Tracker</h1>
+    <p class="text-muted-foreground">
+      Track your expenses with ease. Add transactions, view summaries, and manage your finances with a simple and intuitive interface.
+    </p>
 
     <!-- Summary (totals by category) -->
     <Card>
