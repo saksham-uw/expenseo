@@ -136,6 +136,24 @@ docker-compose exec backend npm test
 
 ---
 
+## 🔄 Reset & Seed Data (Local Dev)
+
+**Reset DB (dangerous: wipes `transactions`):**
+```bash
+docker-compose exec db psql -U postgres -d expenses -c "TRUNCATE TABLE transactions RESTART IDENTITY CASCADE;"
+
+# make executable once
+chmod +x scripts/seed_transactions.sh
+
+# default: 30 items to http://localhost:3333
+./scripts/seed_transactions.sh
+
+# custom count and/or backend URL
+COUNT=60 BACKEND_URL=http://localhost:3333 ./scripts/seed_transactions.sh
+```
+
+---
+
 ## 📂 Repo Hygiene
 
 Commits are incremental and grouped by feature:
