@@ -1,0 +1,93 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Type-check
+        working-directory: frontend
+        run: npm run type-check
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+  backend:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: expenses
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d expenses"
+          --health-interval=3s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install deps
+        working-directory: backend
+        run: npm ci
+
+      - name: Create .env for CI
+        working-directory: backend
+        run: |
+          cat > .env <<'EOF'
+          TZ=UTC
+          NODE_ENV=test
+          HOST=0.0.0.0
+          PORT=3333
+          LOG_LEVEL=info
+          APP_KEY=ci-ci-ci-ci-ci-ci
+          DB_CONNECTION=pg
+          DB_HOST=127.0.0.1
+          DB_PORT=5432
+          DB_USER=postgres
+          DB_PASSWORD=postgres
+          DB_DATABASE=expenses
+          EOF
+
+      - name: Run migrations
+        working-directory: backend
+        run: node ace migration:run --force
+
+      - name: Run tests
+        working-directory: backend
+        run: npm test
