@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { api } from './lib/api'
 import type { Transaction, Balances } from './types/transactions'
 
-// shadcn-vue components
+// shadcn-vue UI
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,11 +34,22 @@ const balances = ref<Balances>({})
 const balancesLoading = ref(false)
 const balancesError = ref<string | null>(null)
 
+/** --- Date range filter (frontend-only) --- */
+const startDate = ref<string | undefined>(undefined)
+const endDate = ref<string | undefined>(undefined)
+
+function buildDateParams() {
+  const params: Record<string, string> = {}
+  if (startDate.value) params.startDate = startDate.value
+  if (endDate.value) params.endDate = endDate.value
+  return params
+}
+
 async function fetchTransactions() {
   listError.value = null
   listLoading.value = true
   try {
-    const { data } = await api.get<Transaction[]>('/transactions')
+    const { data } = await api.get<Transaction[]>('/transactions', { params: buildDateParams() })
     transactions.value = data
   } catch (e: any) {
     listError.value = e?.response?.data?.message || 'Failed to load transactions'
@@ -48,6 +59,7 @@ async function fetchTransactions() {
 }
 
 async function fetchBalances() {
+  // Note: /balances does NOT take date range in this version (kept simple)
   balancesError.value = null
   balancesLoading.value = true
   try {
@@ -58,6 +70,16 @@ async function fetchBalances() {
   } finally {
     balancesLoading.value = false
   }
+}
+
+function applyFilter() {
+  fetchTransactions()
+}
+
+function clearFilter() {
+  startDate.value = undefined
+  endDate.value = undefined
+  fetchTransactions()
 }
 
 async function submit() {
@@ -92,9 +114,9 @@ onMounted(() => {
 
 <template>
   <main class="p-6 max-w-6xl mx-auto space-y-6">
-    <h1 class="text-3xl font-semibold tracking-tight">📒 Expenseo - Lightweight Expense Tracker</h1>
+    <h1 class="text-3xl font-semibold tracking-tight">Mini Expense Tracker</h1>
 
-    <!-- Summary -->
+    <!-- Summary (totals by category) -->
     <Card>
       <CardHeader class="flex items-center justify-between">
         <CardTitle>Summary (by category)</CardTitle>
@@ -161,14 +183,26 @@ onMounted(() => {
       </CardContent>
     </Card>
 
-    <!-- Transactions -->
+    <!-- Transactions (with date range filter) -->
     <Card>
       <CardHeader class="flex items-center justify-between">
         <CardTitle>Transactions</CardTitle>
-        <Button variant="outline" size="sm" :disabled="listLoading" @click="fetchTransactions">
-          {{ listLoading ? 'Refreshing…' : 'Refresh' }}
-        </Button>
+        <div class="flex items-end gap-3">
+          <div class="grid gap-1">
+            <Label for="start">Start date</Label>
+            <Input id="start" type="date" v-model="startDate" />
+          </div>
+          <div class="grid gap-1">
+            <Label for="end">End date</Label>
+            <Input id="end" type="date" v-model="endDate" />
+          </div>
+          <div class="flex gap-2 pb-0.5">
+            <Button variant="outline" size="sm" @click="applyFilter">Apply</Button>
+            <Button variant="outline" size="sm" @click="clearFilter">Clear</Button>
+          </div>
+        </div>
       </CardHeader>
+
       <CardContent>
         <div v-if="listError" class="text-red-600 text-sm mb-2">{{ listError }}</div>
 
