@@ -10,6 +10,8 @@ Expenseo is a simple full-stack expense tracking application built with:
 
 ## 🚀 Quick Start
 
+Copy `.env.example` to `.env` in both frontend and backend directories.
+
 ```bash
 # from project root
 docker-compose up --build
